@@ -205,8 +205,8 @@ public interface TodosIdiomasRepository extends JpaRepository<TodosIdiomas, Long
     @Query(value = "SELECT * FROM todos_idiomas i LIMIT 1", nativeQuery = true)
     List<TodosIdiomas> verificarExistenciaDatos();
 
-    @Query("SELECT i.idioma FROM TodosIdiomas i where i.iso_639_1 = :idioma")
-    TodosIdiomas obtenerIdioma(String idioma);
+    @Query("SELECT i FROM TodosIdiomas i where i.iso_639_1 = :idioma")
+    List<TodosIdiomas> obtenerIdioma(String idioma);
 
 
 }

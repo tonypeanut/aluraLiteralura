@@ -2,19 +2,20 @@ package com.tonypeanut.literalura.model;
 
 import jakarta.persistence.*;
 
+import java.util.List;
+
 @Entity
 @Table(name="autores")
 public class Autor {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long Id;
-
     private String name;
     private Integer birth_year;
     private Integer death_year;
 
-    @ManyToOne
-    private Libro libro;
+    @OneToMany(mappedBy = "autor")
+    private List<Libro> libros;
 
     public Autor() {
     }
@@ -49,15 +50,21 @@ public class Autor {
         this.death_year = death_year;
     }
 
-    public Libro getLibro() {
-        return libro;
+    public Long getId() {
+        return Id;
     }
 
-    public void setLibro(Libro libro) {
-        this.libro = libro;
+    public void setId(Long id) {
+        Id = id;
     }
 
+    public List<Libro> getLibros() {
+        return libros;
+    }
 
+    public void setLibros(List<Libro> libros) {
+        this.libros = libros;
+    }
 
     @Override
     public String toString() {

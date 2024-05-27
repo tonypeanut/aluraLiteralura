@@ -3,6 +3,7 @@ package com.tonypeanut.literalura.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -14,75 +15,31 @@ public class Libro {
     private Long gutendexId;
     private String title;
 
-    @OneToMany(mappedBy = "libro", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private List<Autor> authors;
+    @ManyToOne
+    private Autor autor;
 
-    @OneToMany(mappedBy = "libro", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private List<Genero> subjects;
-
-    @OneToMany(mappedBy = "libro", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private List<Estante> bookshelves;
-
-    @OneToMany(mappedBy = "libro", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private List<Lenguaje> languages;
-    private boolean copyright;
+    private String lenguaje;
     private int download_count;
 
     public Libro() {
     }
 
     public Libro(DatosLibro datosLibro) {
-        this.gutendexId = datosLibro.getId();
-        this.title = datosLibro.getTitle();
-        this.setAuthors(datosLibro.getAuthors());
-        this.setSubjects(datosLibro.getSubjects().stream().map(Genero::new).toList());
-        this.setBookshelves(datosLibro.getBookshelves().stream().map(Estante::new).toList());
-        this.setLanguages(datosLibro.getLanguages().stream().map(Lenguaje::new).toList());
-        this.copyright = datosLibro.isCopyright();
-        this.download_count = datosLibro.getDownload_count();
+        this.gutendexId = datosLibro.id();
+        this.title = datosLibro.title();
+        this.autor = datosLibro.authors().get(0);
+        this.lenguaje = datosLibro.languages().get(0);
+        this.download_count = datosLibro.download_count();
     }
 
     @Override
     public String toString() {
-        String autores;
-        String generos;
-        String estantes;
-        String idiomas;
-
-        if (authors.isEmpty()){
-            autores = "sin datos";
-        } else {
-            autores = authors.toString();
-        }
-
-        if (subjects.isEmpty()){
-            generos = "sin datos";
-        } else {
-            generos = subjects.toString();
-        }
-
-        if (bookshelves.isEmpty()){
-            estantes = "sin datos";
-        } else {
-            estantes = bookshelves.toString();
-        }
-
-        if (languages.isEmpty()){
-            idiomas = "sin datos";
-        } else {
-            idiomas = languages.toString();
-        }
-
-
-        var libro = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" +
+        return  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" +
                 "\nTitulo: " + title + '\'' +
-                "\nAutores = " + autores +
-                "\nGeneros = " + generos +
-                "\nLibreros = " + estantes +
-                "\nIdiomas = " + idiomas +
-                "\nTotal descargas = " + download_count +
+                "\nAutor: " + autor +
+                "\nIdioma: " + lenguaje +
+                "\nTotal descargas: " + download_count +
                 "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
-        return  libro.replace("[","").replace("]","").replace("null"," ? ");
     }
 
     public Long getId() {
@@ -109,48 +66,20 @@ public class Libro {
         this.title = title;
     }
 
-    public List<Autor> getAuthors() {
-        return authors;
+    public Autor getAutor() {
+        return autor;
     }
 
-    public void setAuthors(List<Autor> authors) {
-        authors.forEach(e-> e.setLibro(this));
-        this.authors = authors;
+    public void setAutor(Autor autor) {
+        this.autor = autor;
     }
 
-    public List<Genero> getSubjects() {
-        return subjects;
+    public String getLenguaje() {
+        return lenguaje;
     }
 
-    public void setSubjects(List<Genero> subjects) {
-        subjects.forEach(e -> e.setLibro(this));
-        this.subjects = subjects;
-    }
-
-    public List<Estante> getBookshelves() {
-        return bookshelves;
-    }
-
-    public void setBookshelves(List<Estante> bookshelves) {
-        bookshelves.forEach(e-> e.setLibro(this));
-        this.bookshelves = bookshelves;
-    }
-
-    public List<Lenguaje> getLanguages() {
-        return languages;
-    }
-
-    public void setLanguages(List<Lenguaje> languages) {
-        languages.forEach(e-> e.setLibro(this));
-        this.languages = languages;
-    }
-
-    public boolean isCopyright() {
-        return copyright;
-    }
-
-    public void setCopyright(boolean copyright) {
-        this.copyright = copyright;
+    public void setLenguaje(String lenguaje) {
+        this.lenguaje = lenguaje;
     }
 
     public int getDownload_count() {
@@ -160,6 +89,4 @@ public class Libro {
     public void setDownload_count(int download_count) {
         this.download_count = download_count;
     }
-
-
 }

@@ -1,11 +1,7 @@
 package com.tonypeanut.literalura.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.gson.Gson;
-import com.tonypeanut.literalura.repository.AutorRepository;
-import com.tonypeanut.literalura.repository.LenguajesRepository;
-import com.tonypeanut.literalura.repository.LibroRepository;
-import com.tonypeanut.literalura.repository.TodosIdiomasRepository;
+import com.tonypeanut.literalura.repository.*;
 import com.tonypeanut.literalura.service.ConsumoAPI;
 import com.tonypeanut.literalura.service.ConvierteDatos;
 
@@ -21,7 +17,6 @@ public class App {
 
     private LibroRepository libroRepository;
     private AutorRepository autorRepository;
-    private LenguajesRepository lenguajesRepository;
     private TodosIdiomasRepository todosIdiomasRepository;
 
 
@@ -31,12 +26,10 @@ public class App {
     public App(
             LibroRepository libroRepository,
             AutorRepository autorRepository,
-            LenguajesRepository lenguajesRepository,
             TodosIdiomasRepository todosIdiomasRepository){
 
         this.libroRepository = libroRepository;
         this.autorRepository = autorRepository;
-        this.lenguajesRepository = lenguajesRepository;
         this.todosIdiomasRepository = todosIdiomasRepository;
     }
 
@@ -48,7 +41,6 @@ public class App {
                 3.- Listar autores registrados
                 4.- Listar autores vivos en un determinado año
                 5.- Listar libros por idioma
-                6.- Test
                 
                 0.- Salir
                 """);
@@ -88,9 +80,6 @@ public class App {
             case 5:
                 listarLibrosPorIdioma();
                 break;
-            case 6:
-                test();
-                break;
             default:
                 break;
         }
@@ -100,19 +89,40 @@ public class App {
         System.out.println("Ingresa el nombre del libro que deseas buscar y agregar a la base de datos:");
         var buscar = input.nextLine();
 
-        System.out.println("Busqueda en proceso");
+        System.out.println("Buscando Libro en base de datos local....");
 
-        String URL = URL_BASE + buscar.replace(" ","%20");
-        String response = consumoApi.obtenerDatos(URL);
-        DatosGutendex gutendex = conversor.obtenerDatos(response, DatosGutendex.class);
+        //Buscamos el libro en la base de de datos local
+        var libroInterno = libroRepository.buscarLibroPorTitulo(buscar);
 
-        if(!gutendex.getResults().isEmpty()){
+        // Si el libro no existe en la base de datos local, se buscará en Gutendex.
+        if (libroInterno.isEmpty()) {
+            System.out.println("Libro no existente en la base de datos local, buscando externamente....");
+            String URL = URL_BASE + buscar.replace(" ", "%20");
+            String response = consumoApi.obtenerDatos(URL);
 
-            DatosLibro datosLibro = gutendex.getResults().get(0);
-            Libro libro = new Libro(datosLibro);
+            DatosGutendex gutendex = conversor.obtenerDatos(response, DatosGutendex.class);
 
+            // Si el libro existe en gutendex se obtiene el primer libro del resultado, en caso de no existir se notifica al usuario.
+            if (!gutendex.results().isEmpty()) {
 
-            if (libroRepository.buscarPorGutendexId(libro.getGutendexId()).isEmpty()){
+                Libro libro = new Libro(gutendex.results().get(0));
+
+                Autor autor = libro.getAutor();
+
+                // Si el Id del autor es "null", se procee a buscar en la base de datos o a registrarlo.
+                if (autor.getId() == null) {
+                    // Se busca el autor del libro en la base de datos.
+                    var autoresBuscados = autorRepository.buscarAutorPorNombre(autor.getName());
+
+                    // Si el autor no existe en la base de datos se agrega, si ya existe se recupera de la base de datos.
+                    if (autoresBuscados.isEmpty()) {
+                        autor = autorRepository.save(autor);
+                    } else {
+                        autor = autoresBuscados.get(0);
+                    }
+                }
+
+                libro.setAutor(autor);
                 libroRepository.save(libro);
 
                 System.out.println("Libro encontrado");
@@ -120,14 +130,12 @@ public class App {
                 System.out.println("Libro guardado con éxito");
                 Thread.sleep(2000);
             } else {
-                System.out.println("El libro ya existía en la base de datos.");
+                System.out.println("No se encontró el libro solicitado.");
             }
-
-
         } else {
-            System.out.println("No se encontró el libro solicitado.");
+            System.out.println(libroInterno.get(0));
+            System.out.println("El libro ya existía en la base de datos.");
         }
-
     }
 
     private void listarTodosLosLibros(){
@@ -166,29 +174,23 @@ public class App {
 
     private void listarLibrosPorIdioma(){
         System.out.println("A continuación se muestra una lista con los idiomas que se encuentran registrados en la base de dato.");
-        System.out.println("Para realizar la busqueda ingresa el idioma:");
+        System.out.println("Para realizar la busqueda ingresa las 2 letras que representan el idioma:");
 
-        var idiomas = lenguajesRepository.listarTodosLosLenguajes();
-        System.out.println(idiomas);
+        var idiomas = libroRepository.listarTodosLosLenguajes();
 
-
-
-        //System.out.println(todosIdiomas.getClass());
+        idiomas.forEach(e->{
+            var idioma = todosIdiomasRepository.obtenerIdioma(e);
+            System.out.println(idioma.toString().replace("[","").replace("]",""));
+        });
 
         var idiomaSeleccionado = input.nextLine().toLowerCase();
-        var listaFiltrado = idiomas.stream().filter(e-> idiomaSeleccionado.equals(e.getLenguaje())).toList();
+        var listaFiltrado = idiomas.stream().filter(idiomaSeleccionado::equals).toList();
         if(listaFiltrado.isEmpty()){
             System.out.println("El idioma ingresado no es válido.");
         } else {
             var libros = libroRepository.listarLibrosPorIdioma(idiomaSeleccionado);
             System.out.println(libros);
         }
-    }
-
-    private void test(){
-        long id = 545454;
-        var resultado = libroRepository.buscarPorGutendexId(id);
-        System.out.println(resultado);
     }
 
     public void inicia() throws InterruptedException, JsonProcessingException {
@@ -207,7 +209,7 @@ public class App {
 
             muestraMenu();
 
-            var opcion = recibirOpcion(6);
+            var opcion = recibirOpcion(5);
 
             if (opcion == 0){
                 break;

@@ -1,11 +1,7 @@
 package com.tonypeanut.literalura;
 
 import com.tonypeanut.literalura.model.App;
-import com.tonypeanut.literalura.model.Lenguaje;
-import com.tonypeanut.literalura.repository.AutorRepository;
-import com.tonypeanut.literalura.repository.LenguajesRepository;
-import com.tonypeanut.literalura.repository.LibroRepository;
-import com.tonypeanut.literalura.repository.TodosIdiomasRepository;
+import com.tonypeanut.literalura.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -21,9 +17,6 @@ public class LiteraluraApplication implements CommandLineRunner {
 	private AutorRepository autorRepository;
 
 	@Autowired
-	private LenguajesRepository lenguajesRepository;
-
-	@Autowired
 	private TodosIdiomasRepository todosIdiomasRepository;
 
 
@@ -33,7 +26,7 @@ public class LiteraluraApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		App aplicacion = new App(libroRepository, autorRepository, lenguajesRepository, todosIdiomasRepository);
+		App aplicacion = new App(libroRepository, autorRepository, todosIdiomasRepository);
 
 		aplicacion.inicia();
 	}

@@ -5,16 +5,19 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface LibroRepository extends JpaRepository<Libro, Long> {
-    @Query ("SELECT l FROM Libro l WHERE l.gutendexId = :gutendexId")
-    List<Libro> buscarPorGutendexId(Long gutendexId);
+    @Query ("SELECT l FROM Libro l WHERE l.title ILIKE %:titulo%")
+    List<Libro> buscarLibroPorTitulo(String titulo);
 
     @Query ("SELECT l FROM Libro l")
     List<Libro> listarTodosLosLibros();
 
-    @Query ("SELECT l FROM Libro l JOIN l.languages i WHERE i.lenguaje = :idioma")
+    @Query ("SELECT l FROM Libro l WHERE l.lenguaje = :idioma")
     List<Libro> listarLibrosPorIdioma(String idioma);
+
+
+    @Query (value = "SELECT DISTINCT lenguaje FROM libros", nativeQuery = true)
+    List<String> listarTodosLosLenguajes();
 
 }

@@ -13,4 +13,7 @@ public interface AutorRepository extends JpaRepository<Autor, Long> {
 
     @Query (value = "SELECT DISTINCT ON (name) * FROM autores a WHERE a.birth_year <= :year AND a.death_year >= :year", nativeQuery = true)
     List<Autor> listarTodosLosAutoresVivos(Long year);
+
+    @Query ("SELECT a FROM Autor a WHERE a.name = :name")
+    List<Autor> buscarAutorPorNombre(String name);
 }

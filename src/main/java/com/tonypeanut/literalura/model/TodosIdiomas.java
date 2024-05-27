@@ -46,11 +46,6 @@ public class TodosIdiomas {
 
     @Override
     public String toString() {
-        return "TodosIdiomas{" +
-                "id=" + id +
-                ", idioma='" + idioma + '\'' +
-                ", iso_639_1='" + iso_639_1 + '\'' +
-                ", iso_639_2='" + iso_639_2 + '\'' +
-                '}';
+        return iso_639_1 + " - " + idioma;
     }
 }
