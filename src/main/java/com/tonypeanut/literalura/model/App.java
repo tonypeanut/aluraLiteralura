@@ -5,9 +5,11 @@ import com.tonypeanut.literalura.repository.*;
 import com.tonypeanut.literalura.service.ConsumoAPI;
 import com.tonypeanut.literalura.service.ConvierteDatos;
 
+import java.util.IntSummaryStatistics;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 
 public class App {
@@ -41,6 +43,11 @@ public class App {
                 3.- Listar autores registrados
                 4.- Listar autores vivos en un determinado año
                 5.- Listar libros por idioma
+                6.- Mostrar estadisticas de la base de datos
+                7.- Mostrar 10 libros más descargados
+                8.- Buscar autor por nombre
+                9.- Listar autores que fallecieron despues de determinado año
+                10.- Listar autores que nacieron antes de determinado año
                 
                 0.- Salir
                 """);
@@ -79,6 +86,21 @@ public class App {
                 break;
             case 5:
                 listarLibrosPorIdioma();
+                break;
+            case 6:
+                mostrarEstadisticas();
+                break;
+            case 7:
+                mostrarTop10Libros();
+                break;
+            case 8:
+                buscarAutorPorNombre();
+                break;
+            case 9:
+                listarAutoresPosteriores();
+                break;
+            case 10:
+                listarAutoresAnteriores();
                 break;
             default:
                 break;
@@ -151,8 +173,18 @@ public class App {
 
         System.out.println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
         System.out.println("Los autores registrados en la base de datos son: \n");
-        autores.forEach(System.out::println);
+        autores.forEach(autor -> {
+            System.out.println("\n::::::::::::::::::::::::::::::::::::::");
+            System.out.println("----- Autor -----");
+            System.out.println(autor);
+            System.out.println("----- Libros -----");
+            autor.getLibros().forEach(libro -> {
+                System.out.println(libro.getTitle());
+            });
+        });
+        System.out.println("\n::::::::::::::::::::::::::::::::::::::");
         System.out.println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+
     }
 
     private void listarTodosLosAutoresVivos(){
@@ -161,7 +193,10 @@ public class App {
 
         try {
             var yearInt = Long.valueOf(year);
-            var autores = autorRepository.listarTodosLosAutoresVivos(yearInt);
+
+            //var autores = autorRepository.listarTodosLosAutoresVivos(yearInt);
+            var autores = autorRepository.findByBirthYearLessThanEqualAndDeathYearGreaterThanEqual(yearInt, yearInt); // usando derived querie
+
             if (autores.isEmpty()){
                 System.out.println("No hay autores vivos en el año " + yearInt + " registrados en la base de datos.");
             } else {
@@ -179,17 +214,112 @@ public class App {
         var idiomas = libroRepository.listarTodosLosLenguajes();
 
         idiomas.forEach(e->{
-            var idioma = todosIdiomasRepository.obtenerIdioma(e);
-            System.out.println(idioma.toString().replace("[","").replace("]",""));
+            var idioma = todosIdiomasRepository.obtenerIdioma(e.get(0));
+            System.out.println(idioma.toString().replace("[","").replace("]","") + " - " + e.get(1) +" libros registrados.");
         });
 
         var idiomaSeleccionado = input.nextLine().toLowerCase();
-        var listaFiltrado = idiomas.stream().filter(idiomaSeleccionado::equals).toList();
+        var listaFiltrado = idiomas.stream().filter(idioma -> idioma.get(0).equals(idiomaSeleccionado)).toList();
+
         if(listaFiltrado.isEmpty()){
             System.out.println("El idioma ingresado no es válido.");
         } else {
             var libros = libroRepository.listarLibrosPorIdioma(idiomaSeleccionado);
-            System.out.println(libros);
+            libros.forEach(System.out::println);
+        }
+    }
+
+    private void mostrarEstadisticas(){
+        System.out.println("----- Estadisticas de la base de datos -----");
+        var totalLibros = libroRepository.cuentaTodosLosLibros();
+        System.out.println("\nTotal de libros registrados: " + totalLibros);
+        System.out.println("\n--- Distribución por idiomas ---\n");
+
+        var lenguajes = libroRepository.listarTodosLosLenguajes();
+        lenguajes.forEach(e->{
+            var lenguaje = todosIdiomasRepository.obtenerIdioma(e.get(0));
+            var libros = libroRepository.listarLibrosPorIdioma(lenguaje.get(0).getIso_639_1());
+            var estadisticas = libros.stream().collect(Collectors.summarizingInt(Libro::getDownload_count));
+
+            System.out.println("<><><> " + lenguaje.toString().replace("[","").replace("]","") + " <><><>"  );
+            System.out.println("Libros registrados: " + estadisticas.getCount());
+            System.out.println("Promedio de descargas por libro: " + estadisticas.getAverage());
+            System.out.println("Máximo de descargas: " + estadisticas.getMax());
+            System.out.println("Minimo de descargas: " + estadisticas.getMin());
+            System.out.println();
+
+
+        });
+
+        System.out.println("--- Top libros más descargados ---");
+        var librosMasDescargados = libroRepository.findTop10ByOrderByDownloadCountDesc();
+        librosMasDescargados.forEach(libro -> {
+            System.out.println("Descargas: " + libro.getDownload_count() + " --- Titulo: " + libro.getTitle());
+        });
+    }
+
+    private void mostrarTop10Libros(){
+        var librosMasDescargados = libroRepository.findTop10ByOrderByDownloadCountDesc();
+
+        System.out.println("--- Top libros más descargados ---");
+        librosMasDescargados.forEach(libro -> {
+            System.out.println("Descargas: " + libro.getDownload_count() + " --- Titulo: " + libro.getTitle());
+        });
+    }
+
+    private void buscarAutorPorNombre(){
+        System.out.println("Ingresa el nombre del autor que deseas buscar");
+        var autorBuscado = input.nextLine();
+        var consultaAutor = autorRepository.buscarAutorPorNombreSimilar(autorBuscado);
+
+        if (consultaAutor.isEmpty()){
+            System.out.println("No se encontró ningun autor con ese nombre en la base de datos");
+        } else {
+            System.out.println("- - - - - - - - - - - - - ");
+            var autor = consultaAutor.get(0);
+            System.out.println("Autor: " + autor.toString());
+            var libros = autor.getLibros();
+            System.out.println("Libros: ");
+            libros.forEach(System.out::println);
+            System.out.println("- - - - - - - - - - - - - ");
+        }
+    }
+
+    private void listarAutoresPosteriores(){
+        System.out.println("Ingresa el año a partir del cual deseas buscar autores");
+        var year = input.nextLine();
+
+        try {
+            var yearInt = Long.valueOf(year);
+
+            var autores = autorRepository.findByDeathYearGreaterThan(yearInt); // usando derived querie
+
+            if (autores.isEmpty()){
+                System.out.println("No hay autores que hayn fallecido despues del año " + yearInt + " registrados en la base de datos.");
+            } else {
+                autores.forEach(System.out::println);
+            }
+        } catch (Exception e){
+            System.out.println("Fecha no válida.");
+        }
+    }
+
+    private void listarAutoresAnteriores(){
+        System.out.println("Ingresa el año hasta el cual deseas buscar autores");
+        var year = input.nextLine();
+
+        try {
+            var yearInt = Long.valueOf(year);
+
+            var autores = autorRepository.findByBirthYearLessThan(yearInt); // usando derived querie
+
+            if (autores.isEmpty()){
+                System.out.println("No hay autores que hayan nacido antes del año " + yearInt + " registrados en la base de datos.");
+            } else {
+                autores.forEach(System.out::println);
+            }
+        } catch (Exception e){
+            System.out.println("Fecha no válida.");
         }
     }
 
@@ -209,7 +339,7 @@ public class App {
 
             muestraMenu();
 
-            var opcion = recibirOpcion(5);
+            var opcion = recibirOpcion(10);
 
             if (opcion == 0){
                 break;

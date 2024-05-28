@@ -19,7 +19,7 @@ public class Libro {
     private Autor autor;
 
     private String lenguaje;
-    private int download_count;
+    private int downloadCount;
 
     public Libro() {
     }
@@ -27,9 +27,16 @@ public class Libro {
     public Libro(DatosLibro datosLibro) {
         this.gutendexId = datosLibro.id();
         this.title = datosLibro.title();
-        this.autor = datosLibro.authors().get(0);
+
+        if (datosLibro.authors().isEmpty()){
+            this.autor = new Autor("Sin nombre");
+        } else {
+            this.autor = datosLibro.authors().get(0);
+        }
+
+
         this.lenguaje = datosLibro.languages().get(0);
-        this.download_count = datosLibro.download_count();
+        this.downloadCount = datosLibro.download_count();
     }
 
     @Override
@@ -38,7 +45,7 @@ public class Libro {
                 "\nTitulo: " + title + '\'' +
                 "\nAutor: " + autor +
                 "\nIdioma: " + lenguaje +
-                "\nTotal descargas: " + download_count +
+                "\nTotal descargas: " + downloadCount +
                 "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
     }
 
@@ -83,10 +90,10 @@ public class Libro {
     }
 
     public int getDownload_count() {
-        return download_count;
+        return downloadCount;
     }
 
     public void setDownload_count(int download_count) {
-        this.download_count = download_count;
+        this.downloadCount = download_count;
     }
 }

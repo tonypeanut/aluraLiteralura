@@ -11,19 +11,23 @@ public class Autor {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long Id;
     private String name;
-    private Integer birth_year;
-    private Integer death_year;
+    private Integer birthYear;
+    private Integer deathYear;
 
-    @OneToMany(mappedBy = "autor")
+    @OneToMany(mappedBy = "autor", fetch = FetchType.EAGER)
     private List<Libro> libros;
 
     public Autor() {
     }
 
+    public Autor(String name){
+        this.name = name;
+    }
+
     public Autor(String name, Integer birth_year, Integer death_year) {
         this.name = name;
-        this.birth_year = birth_year;
-        this.death_year = death_year;
+        this.birthYear = birth_year;
+        this.deathYear = death_year;
     }
 
     public String getName() {
@@ -35,19 +39,19 @@ public class Autor {
     }
 
     public Integer getBirth_year() {
-        return birth_year;
+        return birthYear;
     }
 
     public void setBirth_year(Integer birth_year) {
-        this.birth_year = birth_year;
+        this.birthYear = birth_year;
     }
 
     public Integer getDeath_year() {
-        return death_year;
+        return deathYear;
     }
 
     public void setDeath_year(Integer death_year) {
-        this.death_year = death_year;
+        this.deathYear = death_year;
     }
 
     public Long getId() {
@@ -70,10 +74,10 @@ public class Autor {
     public String toString() {
         String texto;
 
-        if (birth_year == null && death_year == null){
-            texto = name + "(sin fecha)";
+        if (birthYear == null && deathYear == null){
+            texto = name + " (sin fecha)";
         } else {
-            texto = name + "(" + birth_year + " - " + death_year + ")";
+            texto = name + " (" + birthYear + " - " + deathYear + ")";
         }
         return texto;
     }
